@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Chat</title>
+    <!-- SockJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <!-- STOMP -->
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        #chat {
+            border: 1px solid #ccc;
+            padding: 10px;
+            width: 400px;
+            height: 300px;
+            overflow-y: scroll;
+        }
+        #messageInput {
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h2>WebSocket Chat</h2>
+
+    <!-- Connect / Disconnect Buttons -->
+    <div>
+        <button id="connectBtn">Connect</button>
+        <button id="disconnectBtn" disabled>Disconnect</button>
+    </div>
+
+    <!-- Chat Window -->
+    <div id="chat"></div>
+
+    <!-- Send Message -->
+    <input type="text" id="messageInput" placeholder="Type message..." />
+    <button id="sendBtn" disabled>Send</button>
+
+    <script>
+        let stompClient = null;
+
+        function connect() {
+            // Hardcoded IP + port of backend
+            const socket = new SockJS('http://192.168.1.69:8081/connect');
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function(frame) {
+                console.log('Connected: ' + frame);
+
+                // Enable send and disconnect buttons
+                document.getElementById('sendBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = false;
+                document.getElementById('connectBtn').disabled = true;
+
+                // Subscribe to /topic to receive public messages
+                stompClient.subscribe('/topic', function(messageOutput) {
+                    showMessage(messageOutput.body);
+                });
+            }, function(error) {
+                console.error('WebSocket connection error: ', error);
+            });
+        }
+
+        function disconnect() {
+            if (stompClient) {
+                stompClient.disconnect(() => {
+                    console.log('Disconnected');
+                    document.getElementById('sendBtn').disabled = true;
+                    document.getElementById('disconnectBtn').disabled = true;
+                    document.getElementById('connectBtn').disabled = false;
+                });
+            }
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            if (message && stompClient) {
+                stompClient.send("/app/send", {}, JSON.stringify({ message: message }));
+                document.getElementById('messageInput').value = '';
+            }
+        }
+
+        function showMessage(message) {
+            const chat = document.getElementById('chat');
+            const msgElement = document.createElement('div');
+            msgElement.textContent = message;
+            chat.appendChild(msgElement);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // Event listeners
+        document.getElementById('connectBtn').addEventListener('click', connect);
+        document.getElementById('disconnectBtn').addEventListener('click', disconnect);
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+    </script>
+</body>
+</html>
