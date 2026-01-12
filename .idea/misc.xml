@@ -5,6 +5,7 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/WRKEL/pom.xml" />
+        <option value="$PROJECT_DIR$/demoservice/demoservice/pom.xml" />
       </list>
     </option>
   </component>
